@@ -1,9 +1,9 @@
 # agy-patcher
 
 Antigravity CLI incorrectly logs error messages when it receives `EAGAIN`. This
-causes the log in ~/.gemini/antigravity-cli/log/ to grow to enormous size (one
+causes the log in `~/.gemini/antigravity-cli/log/` to grow to enormous size (one
 time I left agy running overnight, and woke up to find no space in home
-directory, and log being hundres of gigabytes).
+directory, and log being hundreds of gigabytes).
 
 This script tries to hack agy binary, installed as FreeBSD port, to prevent
 this logging.
