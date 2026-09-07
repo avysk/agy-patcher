@@ -53,7 +53,7 @@ then
         exit 1
 fi
 
-if ! echo "$ASM" | /usr/bin/awk '
+if ! echo "$ASM" | LC_ALL=C /usr/bin/awk '
         BEGIN { found = 0; }
         NR==1 && /leaq/ { print "leaq found"; found++ }
         NR==2 && /movl/ { print "movl found"; found++ }
@@ -80,10 +80,10 @@ echo "$TO"
 echo
 echo "Searching for sequence$FROM in $AGY..."
 
-OFFSET=$(/usr/bin/hexdump -v -e '1/1 "%02x "' "$AGY" | /usr/bin/awk -v pat="${FROM## }" -f finder.awk) || exit 1
+OFFSET=$(/usr/bin/hexdump -v -e '1/1 "%02x "' "$AGY" | LC_ALL=C /usr/bin/awk -v pat="${FROM## }" -f finder.awk) || exit 1
 echo "Offset in $AGY is $OFFSET."
 
-echo "$TO" | /usr/bin/awk '
+echo "$TO" | LC_ALL=C /usr/bin/awk '
 BEGIN {
         for (i=0; i<10; i++) hex[i] = i
         hex["a"]=10; hex["b"]=11; hex["c"]=12; hex["d"]=13; hex["e"]=14; hex["f"]=15
