@@ -1,12 +1,5 @@
 #!/bin/sh
 
-if ! [ -x /usr/local/bin/perl ]
-then
-        echo "This script requires perl."
-        exit 1
-fi
-echo "/usr/local/bin/perl found."
-
 AGY=/usr/local/bin/agy
 MESSAGE="projects store: fsnotify error"
 
@@ -40,8 +33,9 @@ fi
 
 DADDR=$(echo "$MATCHES" | /usr/bin/sed -e s/:.*$//)
 ADDR=$(printf "%x" "$DADDR")
-echo "Message found at 0x$ADDR."
+echo "Message '$MESSAGE' found at 0x$ADDR."
 
+echo "Searching $AGY for assembly using it..."
 ASM=$(/usr/bin/objdump -d "$AGY" | grep -A 2 "$ADDR")
 if ! [ "$ASM" ]
 then
@@ -74,14 +68,33 @@ fi
 bytes_leaq=$(echo "$ASM" | grep leaq | /usr/bin/sed -e 's/.*:\(.*[^[:blank:]]\)[[:blank:]]*leaq.*/\1/')
 bytes_movl=$(echo "$ASM" | grep movl | /usr/bin/sed -e 's/.*:\(.*[^[:blank:]]\)[[:blank:]]*movl.*/\1/')
 bytes_callq=$(echo "$ASM" | grep callq | /usr/bin/sed -e 's/.*:\(.*[^[:blank:]]\)[[:blank:]]*callq.*/\1/')
-PREFIX=$(echo "$bytes_leaq" | /usr/bin/sed -e 's/ /\\x/g')$(echo "$bytes_movl" | /usr/bin/sed -e 's/ /\\x/g')
-FROM=$PREFIX$(echo "$bytes_callq" | /usr/bin/sed -e 's/ /\\x/g')
-TO=$PREFIX'\x90\x90\x90\x90\x90'
+PREFIX="$bytes_leaq$bytes_movl"
+FROM="$PREFIX$bytes_callq"
+TO="$PREFIX 90 90 90 90 90"
 
 echo
 echo "Will substitute"
 echo "$FROM"
 echo "to"
 echo "$TO"
+echo
+echo "Searching for sequence$FROM in $AGY..."
 
-/usr/local/bin/perl -0777 -pi -e "s/$FROM/$TO/g" "$AGY"
+OFFSET=$(/usr/bin/hexdump -v -e '1/1 "%02x "' "$AGY" | /usr/bin/awk -v pat="${FROM## }" -f finder.awk) || exit 1
+echo "Offset in $AGY is $OFFSET."
+
+echo "$TO" | /usr/bin/awk '
+BEGIN {
+        for (i=0; i<10; i++) hex[i] = i
+        hex["a"]=10; hex["b"]=11; hex["c"]=12; hex["d"]=13; hex["e"]=14; hex["f"]=15
+        hex["A"]=10; hex["B"]=11; hex["C"]=12; hex["D"]=13; hex["E"]=14; hex["F"]=15
+}
+{
+        for (i=1; i<=NF; i++) {
+                val = hex[substr($i, 1, 1)] * 16 + hex[substr($i, 2, 1)]
+                printf "%c", val
+        }
+}' | /bin/dd of="$AGY" bs=1 seek="$OFFSET" conv=notrunc
+
+echo
+echo "Done."
