@@ -73,9 +73,9 @@ FROM="$PREFIX$bytes_callq"
 TO="$PREFIX 90 90 90 90 90"
 
 echo
-echo "Will substitute"
+echo "Will replace"
 echo "$FROM"
-echo "to"
+echo "with"
 echo "$TO"
 echo
 echo "Searching for sequence$FROM in $AGY..."
